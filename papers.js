@@ -10,14 +10,15 @@ const COUNTRIES = [
 const EXPIRE_DATE = new Date("1982.11.22");
 const DOCUMENTS = {
 	entrants: ["passport", "certificate of vaccination"],
-	native: ["ID_card"],
+	native: ["ID card"],
 	foreigners: ["access permit", "work pass", "grant of asylum", "diplomatic authorization"]
 };
 const VALID_DOC_NAMES = {
-	id: "ID number",
+	ID_card: "ID card",
 	grant_of_asylum: "grant of asylum",
 	access_permit: "access permit",
-	work_pass: "work pass"
+	work_pass: "work pass",
+	id: "ID number"
 };
 const MSG = {
 	success: {
@@ -26,7 +27,7 @@ const MSG = {
 	},
 	fail: {
 		missingVaccinations: {
-			msg: "Entry denied: missing required vaccination."
+			msg: "Entry denied: missing required certificate of vaccination."
 		},
 		missingDocuments: {
 			msg: "Entry denied: missing required _."
@@ -146,6 +147,9 @@ class Entrant {
 	get isForeigner() {
 		return this.nationality != "Arstotzka";
 	}
+	hasID() {
+		return this.docs.includes("ID_card");
+	}
 	get isWorker() {
 		return this.isForeigner && this.purpose == "WORK";
 	}
@@ -257,6 +261,7 @@ class Validator {
 		result.set("missingDocuments", []);
 		this.entryRules.requiredDocuments.forEach((doc) => {
 			if (!this.entrant.isForeigner && DOCUMENTS.foreigners.includes(doc.replace(/_/, " "))) return;
+			if (this.entrant.isForeigner && DOCUMENTS.native.includes(doc.replace(/_/, " "))) return;
 			if (this.entrant.isDiplomat && DOCUMENTS.foreigners.includes(doc.replace(/_/, " "))) return;
 			if (
 				this.entrant.isForeigner &&
@@ -264,7 +269,10 @@ class Validator {
 				this.entrant.docs.includes("grant_of_asylum")
 			)
 				return;
-			if (!this.entrant.docs.length) result.get("missingDocuments").push("passport");
+			if (!this.entrant.docs.length) {
+				result.get("missingDocuments").push("passport");
+				return;
+			}
 			if (!this.entrant.docs.includes(doc)) result.get("missingDocuments").push(doc);
 		});
 	}
@@ -277,8 +285,10 @@ class Validator {
 	checkAllowedCountries(result) {
 		result.set("nationDenied", []);
 		if (!this.entrant.isForeigner) return;
+		// if (this.entrant.hasID()) return;
 		if (this.entrant.isAccessibleDiplomat) return;
-		if (!this.entryRules.nationsEnter.length || !this.entryRules.nationsDeny.length) return;
+		if (this.entrant.docs.includes("access_permit")) return;
+		if (!this.entryRules.nationsEnter.length && !this.entryRules.nationsDeny.length) return;
 		if (!this.entryRules.nationsEnter.includes(this.entrant.nationality))
 			result.get("nationDenied").push(this.entrant.nationality);
 	}
@@ -383,17 +393,16 @@ class Inspector {
 
 const inspector = new Inspector();
 const bulletin = `Citizens of Arstotzka require ID card
-Deny citizens of Kolechia
-Wanted by the State: Hubert Romanowski`;
+Deny citizens of Obristan
+Citizens of Kolechia, Antegria require rubella vaccination
+Wanted by the State: Anna Latva`;
 inspector.receiveBulletin(bulletin);
 
 let entrant0 = {
 	passport:
-		"ID#: QK04D-PGYN9\nNATION: Kolechia\nNAME: Newman, Bernard\nDOB: 1952.07.01\nSEX: M\nISS: Vedor\nEXP: 1982.12.28",
-	access_permit:
-		"NAME: Newman, Bernard\nNATION: Kolechia\nID#: QK04D-PGYN9\nPURPOSE: TRANSIT\nDURATION: 14 DAYS\nHEIGHT: 186cm\nWEIGHT: 99kg\nEXP: 1984.12.05"
+		"ID#: DN3B5-QGY40\nNATION: Arstotzka\nNAME: Novak, Stefan\nDOB: 1929.10.19\nSEX: M\nISS: Orvech Vonor\nEXP: 1985.11.24",
+	ID_card: "NAME: Novak, Stefan\nDOB: 1929.10.19\nHEIGHT: 153cm\nWEIGHT: 51kg"
 };
-
 let entrants = [entrant0];
 entrants.forEach((e) => inspector.inspect(e));
 
