@@ -109,17 +109,6 @@ class Entrant {
 		this.documents = [];
 		this.parseDocuments();
 	}
-	get particularEntrantTypeDocuments() {
-		let general = ["passport"];
-		if (!this.isForeigner) return [...general, "ID_card"];
-		return [
-			...general,
-			"access_permit",
-			"work_pass",
-			"grant_of_asylum",
-			"diplomatic_authorization"
-		];
-	}
 	parseDocuments() {
 		Object.entries(this.data).forEach(([key, val]) => {
 			this.documents.push(new Document({ type: key, data: val }));
@@ -146,9 +135,6 @@ class Entrant {
 	}
 	get isForeigner() {
 		return this.nationality != "Arstotzka";
-	}
-	hasID() {
-		return this.docs.includes("ID_card");
 	}
 	get isWorker() {
 		return this.isForeigner && this.purpose == "WORK";
