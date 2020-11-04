@@ -230,7 +230,14 @@ class Validator {
 	}
 	checkVaccinations(result) {
 		result.set("missingVaccinations", []);
-		this.entryRules.requiredVaccinations.forEach((vac) => {
+		this.entryRules.requiredVaccinations.forEach(({vac, countries}) => {
+			if(countries.length){
+				if(countries.includes(this.entrant.nationality)){
+					if (!this.entrant.vaccinations.includes(vac)) result.get("missingVaccinations").push(vac);
+					return
+				}
+				else return
+			}
 			if (!this.entrant.vaccinations.includes(vac)) result.get("missingVaccinations").push(vac);
 		});
 	}
@@ -259,7 +266,13 @@ class Validator {
 	}
 	checkRequiredDocuments(result) {
 		result.set("missingDocuments", []);
-		this.entryRules.requiredDocuments.forEach((doc) => {
+		this.entryRules.requiredDocuments.forEach(({doc, countries}) => {
+			if(countries.length){
+				if(countries.includes(this.entrant.nationality)){
+					if(!this.entrant.docs.includes(doc)) result.get("missingDocuments").push(doc);
+					return
+				}
+			}
 			if (!this.entrant.isForeigner && DOCUMENTS.foreigners.includes(doc.replace(/_/, " "))) return;
 			if (this.entrant.isForeigner && DOCUMENTS.native.includes(doc.replace(/_/, " "))) return;
 			if (this.entrant.isDiplomat && DOCUMENTS.foreigners.includes(doc.replace(/_/, " "))) return;
@@ -301,6 +314,11 @@ class Validator {
 }
 class Inspector {
 	constructor() {
+		this.reset()
+		this.hasBulletin = false
+		this.validator = new Validator();
+	}
+	reset(){
 		this.dataFromBulletin = {
 			nationsEnter: [],
 			nationsDeny: [],
@@ -308,10 +326,10 @@ class Inspector {
 			requiredVaccinations: [],
 			wantedCriminals: []
 		};
-		this.validator = new Validator();
 	}
 	receiveBulletin(bulletin) {
 		// console.log("----", bulletin);
+		this.reset()
 		this.getBulletinPieceOfData = this.handleBulletin(bulletin);
 		this.parseDocuments(this.getBulletinPieceOfData("documents"));
 		this.parseCounteris(this.getBulletinPieceOfData("nations"));
@@ -337,10 +355,13 @@ class Inspector {
 	parseDocuments(bulletin) {
 		if (!bulletin) return;
 		let requireddDocs = this.getPieceOfData("requiredDocuments");
+		let countries = []
+		// can be documents per countries
+		COUNTRIES.forEach(c => bulletin.includes(c) && countries.push(c))
 		Object.values(DOCUMENTS)
 			.reduce((acc, cur) => [...acc, ...cur])
 			.forEach((doc) => {
-				if (bulletin.includes(doc)) requireddDocs.push(doc.replace(/ /, "_"));
+				if (bulletin.includes(doc)) requireddDocs.push({doc: doc.replace(/ /, "_"), countries});
 			});
 	}
 	parseCounteris(bulletin) {
@@ -355,12 +376,15 @@ class Inspector {
 	}
 	parseVaccinations(bulletin) {
 		if (!bulletin) return;
+		let countries = []
+		// can be vaccines per countries
+		COUNTRIES.forEach(c => bulletin.includes(c) && countries.push(c))
 		let vaccinations = this.getPieceOfData("requiredVaccinations");
 		bulletin
 			.match(/(?<=require ).+/)[0]
 			.replace(/vaccination/g, "")
 			.split(",")
-			.forEach((vac) => vaccinations.push(vac.trim()));
+			.forEach((vac) => vaccinations.push({vac:vac.trim(), countries}));
 	}
 	parseCriminals(bulletin) {
 		if (!bulletin) return;
