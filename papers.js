@@ -56,7 +56,7 @@ const FAIL_REASON_WEIGHT = {
 	criminal: 6,
 	mismatch: 5,
 	missingVaccinations: 0,
-	diplomaticAuthorization: 0
+	diplomaticAuthorization: 1
 };
 class Document {
 	constructor({ type, data }) {
