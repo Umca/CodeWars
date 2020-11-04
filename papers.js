@@ -240,7 +240,6 @@ class Validator {
 		let failure = Array.from(result.entries())
 			.filter(([key, arr]) => arr.length)
 			.sort((a, b) => {
-				console.log(FAIL_REASON_WEIGHT[b[0]] - FAIL_REASON_WEIGHT[a[0]]);
 				return FAIL_REASON_WEIGHT[b[0]] - FAIL_REASON_WEIGHT[a[0]];
 			})[0];
 
@@ -284,12 +283,12 @@ class Validator {
 	checkAllowedCountries(result) {
 		result.set("nationDenied", []);
 		if (!this.entrant.isForeigner) return;
-		// if (this.entrant.hasID()) return;
 		if (this.entrant.isAccessibleDiplomat) return;
+		
 		if (this.entrant.docs.includes("access_permit")) return;
 		if (!this.entryRules.nationsEnter.length && !this.entryRules.nationsDeny.length) return;
 		if (!this.entryRules.nationsEnter.includes(this.entrant.nationality))
-			result.get("nationDenied").push(this.entrant.nationality);
+		result.get("nationDenied").push(this.entrant.nationality);
 	}
 	getPieceOfData(prop) {
 		return this.entryRules[prop];
@@ -402,29 +401,19 @@ class Inspector {
 }
 
 const inspector = new Inspector();
-const bulletin = `Citizens of Arstotzka require ID card
-Deny citizens of Obristan
-Citizens of Kolechia, Antegria require rubella vaccination
-Wanted by the State: Anna Latva`;
+const bulletin0 = `Allow citizens of Antegria
+Deny citizens of Impor
+Citizens of Impor, Obristan, Antegria require typhus vaccination
+Wanted by the State: Karin Dvorkin`
+inspector.receiveBulletin(bulletin0);
+
+const bulletin =  `Foreigners require access permit
+Wanted by the State: Evgeny Aji`
 inspector.receiveBulletin(bulletin);
 
-let entrant0 = {
-	passport:
-		"ID#: DN3B5-QGY40\nNATION: Arstotzka\nNAME: Novak, Stefan\nDOB: 1929.10.19\nSEX: M\nISS: Orvech Vonor\nEXP: 1985.11.24",
-	ID_card: "NAME: Novak, Stefan\nDOB: 1929.10.19\nHEIGHT: 153cm\nWEIGHT: 51kg"
-};
+let entrant0 ={ access_permit:
+	'NAME: Ramos, Viktoria\nNATION: Impor\nID#: DM71D-G3PD9\nPURPOSE: TRANSIT\nDURATION: 14 DAYS\nHEIGHT: 166cm\nWEIGHT: 71kg\nEXP: 1985.04.12' }
 let entrants = [entrant0];
+
 entrants.forEach((e) => inspector.inspect(e));
 
-// Foreigners require access permit
-// '{passporty: ID#: S0Z6L-NT2MC\nNATION: Arstotzka\nNAME: Larsen, Alberta\nDOB: 1935.05.01\nSEX: F\nISS: Paradizna\nEXP: 1982.12.31' }
-// expected glory
-
-// { passport: 'ID#: EET93-P7RN5\nNATION: Obristan\nNAME: Kierkgaard, Petr\nDOB: 1959.11.03\nSEX: M\nISS: Skal\nEXP: 1984.10.03',access_permit: 'NAME: Kierkgaard, Petr\nNATION: Obristan\nID#: EET93-P7RN5\nPURPOSE: TRANSIT\nDURATION: 2 DAYS\nHEIGHT: 163cm\nWEIGHT: 66kg\nEXP: 1985.03.26' }'
-// expected no trouble
-
-// { passport:'ID#: TN265-FJ2PP\nNATION: Impor\nNAME: Babayev, Ekaterina\nDOB: 1928.02.20\nSEX: F\nISS: Enkyo\nEXP: 1983.05.22',access_permit: 'NAME: Babayev, Ekaterina\nNATION: Impor\nID#: TXWB6-AP80D\nPURPOSE: WORK\nDURATION: 1 YEAR\nHEIGHT: 156cm\nWEIGHT: 56kg\nEXP: 1983.12.26',work_pass:'NAME: Babayev, Ekaterina\nFIELD: Surveying\nEXP: 1981.02.09' }
-// expected Detainment: ID number mismatch.
-
-//  { passport:'ID#: DNT06-TK134\nNATION: United Federation\nNAME: Rosebrova, Petra\nDOB: 1937.10.05\nSEX: F\nISS: Great Rapid\nEXP: 1984.07.07' }
-// expected Entry denied: missing required access permit.
